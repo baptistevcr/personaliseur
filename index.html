@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personnalisation 3D</title>
+    <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" type="module"></script>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        canvas {
+            border: 1px solid #ddd;
+            margin-top: 20px;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        button, input {
+            margin: 10px;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Visualiseur 3D -->
+    <model-viewer id="bookViewer"
+                  src="https://baptistevcr.github.io/3Dviewer/Architexturebook.glb"
+                  ar
+                  ar-modes="webxr scene-viewer quick-look"
+                  camera-controls
+                  tone-mapping="neutral"
+                  poster="poster.webp"
+                  shadow-intensity="1"
+                  alt="Livre personnalisable">
+    </model-viewer>
+
+    <!-- Contrôles pour importer et manipuler l'image -->
+    <div class="controls">
+        <h3>Personnaliser la couverture :</h3>
+        <input type="file" id="fileInput" accept="image/*">
+        <button onclick="applyTexture()">Appliquer l'image</button>
+        <button onclick="rotateImage(-15)">↺ Pivoter Gauche</button>
+        <button onclick="rotateImage(15)">↻ Pivoter Droite</button>
+    </div>
+
+    <!-- Canvas pour redimensionner et ajuster l'image -->
+    <canvas id="imageCanvas" width="1024" height="512"></canvas>
+
+    <script>
+        let img = new Image();
+        let canvas = document.getElementById('imageCanvas');
+        let ctx = canvas.getContext('2d');
+        let imgX = 256, imgY = 128;
+        let imgWidth = 512, imgHeight = 512;
+        let isDragging = false;
+        let rotationAngle = 0;
+
+        // Importer une image depuis l'input
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                img.src = event.target.result;
+                img.onload = function () {
+                    drawImage();
+                };
+            };
+            reader.readAsDataURL(e.target.files[0]);
+        });
+
+        // Dessiner l'image sur le canvas avec des guides
+        function drawImage() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dessiner les guides (lignes horizontales et verticales au centre)
+            ctx.strokeStyle = "#aaa";
+            ctx.setLineDash([5, 5]);  // Ligne pointillée
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.moveTo(0, canvas.height / 2);
+            ctx.lineTo(canvas.width, canvas.height / 2);
+            ctx.stroke();
+            ctx.setLineDash([]);  // Réinitialiser les pointillés
+
+            // Pivoter l'image
+            ctx.save();
+            ctx.translate(imgX + imgWidth / 2, imgY + imgHeight / 2);
+            ctx.rotate(rotationAngle * Math.PI / 180);
+            ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+            ctx.restore();
+        }
+
+        // Détection du drag pour déplacer l'image
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            if (mouseX > imgX && mouseX < imgX + imgWidth && mouseY > imgY && mouseY < imgY + imgHeight) {
+                isDragging = true;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                const rect = canvas.getBoundingClientRect();
+                imgX = e.clientX - rect.left - imgWidth / 2;
+                imgY = e.clientY - rect.top - imgHeight / 2;
+                drawImage();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Redimensionner l'image avec la molette de la souris
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const scale = e.deltaY < 0 ? 1.1 : 0.9;
+            imgWidth *= scale;
+            imgHeight *= scale;
+            drawImage();
+        });
+
+        // Pivoter l'image avec des boutons
+        function rotateImage(angle) {
+            rotationAngle += angle;
+            drawImage();
+        }
+
+        // Appliquer la texture redimensionnée et ajustée
+        function applyTexture() {
+            const modelViewer = document.querySelector("#bookViewer");
+
+            // Convertir le canvas en texture (dataURL)
+            const textureUrl = canvas.toDataURL('image/png');
+
+            // Appliquer la texture au modèle 3D
+            modelViewer.model.materials.forEach((material) => {
+                if (material.name === "cover") {
+                    material.pbrMetallicRoughness.baseColorTexture.setURI(textureUrl);
+                }
+            });
+        }
+    </script>
+
+</body>
+</html>
