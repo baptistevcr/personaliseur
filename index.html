@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personnalisation 3D</title>
+    <title>Personnalisation 3D - Livre</title>
     <script src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js" type="module"></script>
     <style>
         body {
@@ -12,9 +12,14 @@
             align-items: center;
             margin-top: 20px;
         }
+        model-viewer {
+            width: 90vw;
+            height: 80vh;
+        }
         canvas {
             border: 1px solid #ddd;
             margin-top: 20px;
+            display: block;
         }
         .controls {
             margin-top: 20px;
@@ -28,7 +33,7 @@
 </head>
 <body>
 
-    <!-- Visualiseur 3D -->
+    <!-- Visualiseur 3D Agrandi -->
     <model-viewer id="bookViewer"
                   src="https://baptistevcr.github.io/3Dviewer/Architexturebook.glb"
                   ar
@@ -72,6 +77,7 @@
         let isDragging = false;
         let rotationAngle = 0;
 
+        // Inputs de fichiers pour chaque partie
         const inputs = {
             'cover': document.getElementById('coverInput'),
             'spine': document.getElementById('spineInput'),
@@ -124,7 +130,6 @@
             modelViewer.model.materials.forEach((material) => {
                 console.log("Tentative d'application sur : " + material.name);
 
-                // Appliquer selon la zone
                 if (
                     (zone === 'cover' && material.name.toLowerCase().includes('cover')) ||
                     (zone === 'spine' && material.name.toLowerCase().includes('spine')) ||
