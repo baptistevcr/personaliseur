@@ -72,14 +72,13 @@
         let isDragging = false;
         let rotationAngle = 0;
 
-        // Inputs de fichiers pour chaque partie
         const inputs = {
             'cover': document.getElementById('coverInput'),
             'spine': document.getElementById('spineInput'),
             'back': document.getElementById('backInput')
         };
 
-        // Associer les inputs au chargement de l'image
+        // Charger l'image et la dessiner
         for (let zone in inputs) {
             inputs[zone].addEventListener('change', function (e) {
                 const reader = new FileReader();
@@ -123,45 +122,29 @@
             const textureUrl = canvas.toDataURL('image/png');
 
             modelViewer.model.materials.forEach((material) => {
-                if (material.name === zone) {
+                console.log("Tentative d'application sur : " + material.name);
+
+                // Appliquer selon la zone
+                if (
+                    (zone === 'cover' && material.name.toLowerCase().includes('cover')) ||
+                    (zone === 'spine' && material.name.toLowerCase().includes('spine')) ||
+                    (zone === 'back' && material.name.toLowerCase().includes('back'))
+                ) {
+                    console.log("Texture appliquée à : " + material.name);
                     material.pbrMetallicRoughness.baseColorTexture.setURI(textureUrl);
+                    material.pbrMetallicRoughness.baseColorTexture.needsUpdate = true;
                 }
             });
         }
 
-        // Permet de glisser-déposer l'image
-        canvas.addEventListener('mousedown', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const mouseX = e.clientX - rect.left;
-            const mouseY = e.clientY - rect.top;
-
-            if (mouseX > imgX && mouseX < imgX + imgWidth && mouseY > imgY && mouseY < imgY + imgHeight) {
-                isDragging = true;
-            }
+        // Lister les matériaux détectés (debug)
+        document.querySelector("#bookViewer").addEventListener('load', () => {
+            const modelViewer = document.querySelector("#bookViewer");
+            console.log("Modèle chargé. Matériaux détectés :");
+            modelViewer.model.materials.forEach((material) => {
+                console.log(material.name);
+            });
         });
-
-        canvas.addEventListener('mousemove', (e) => {
-            if (isDragging) {
-                const rect = canvas.getBoundingClientRect();
-                imgX = e.clientX - rect.left - imgWidth / 2;
-                imgY = e.clientY - rect.top - imgHeight / 2;
-                drawImage();
-            }
-        });
-
-        canvas.addEventListener('mouseup', () => {
-            isDragging = false;
-        });
-
-        // Redimensionner avec la molette
-        canvas.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const scale = e.deltaY < 0 ? 1.1 : 0.9;
-            imgWidth *= scale;
-            imgHeight *= scale;
-            drawImage();
-        });
-
     </script>
 
 </body>
